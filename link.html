@@ -85,7 +85,7 @@
 
     function createHandler(isOAuth) {
       handler = Plaid.create({
-        token: 'link-production-28fbcc72-1f22-42f5-9216-7bcb45678876',
+        token: 'link-production-3b1ff404-8ca4-4de4-a713-0849a71208e7',
         receivedRedirectUri: isOAuth ? window.location.href : null,
         onSuccess: function(public_token, metadata) {
           showToken(public_token);
