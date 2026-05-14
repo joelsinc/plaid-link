@@ -49,6 +49,7 @@
     #copy-btn:hover { background-color: #219a52; }
     #copy-confirm { color: #27ae60; font-size: 13px; margin-top: 8px; display: none; }
     .instruction { color: #555; font-size: 14px; margin-top: 8px; }
+    #status-msg { color: #0A85EA; font-size: 14px; margin-top: 16px; display: none; }
   </style>
 </head>
 <body>
@@ -56,6 +57,7 @@
     <h2>Plaid Bank Connection</h2>
     <p>Click the button below to connect your bank account.</p>
     <button id="link-button">Link Account</button>
+    <div id="status-msg">Completing bank connection... please wait.</div>
 
     <div id="result-box">
       <h2>✅ Bank Connected Successfully!</h2>
@@ -72,15 +74,21 @@
     var publicToken = '';
     var handler = null;
 
-    window.addEventListener('load', function() {
+    function showToken(token) {
+      publicToken = token;
+      document.getElementById('token-display').innerText = token;
+      document.getElementById('result-box').style.display = 'block';
+      document.getElementById('link-button').style.display = 'none';
+      document.getElementById('status-msg').style.display = 'none';
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function createHandler(isOAuth) {
       handler = Plaid.create({
-        token: 'link-production-4263e1d8-1b29-4f0a-af2a-6e9bbb349cc8',
+        token: 'link-production-23925140-633e-47a9-b4b4-256d91f1de1a',
+        receivedRedirectUri: isOAuth ? window.location.href : null,
         onSuccess: function(public_token, metadata) {
-          publicToken = public_token;
-          document.getElementById('token-display').innerText = public_token;
-          document.getElementById('result-box').style.display = 'block';
-          document.getElementById('link-button').style.display = 'none';
-          window.scrollTo(0, document.body.scrollHeight);
+          showToken(public_token);
         },
         onExit: function(err, metadata) {
           if (err) console.log('Error:', err);
@@ -89,8 +97,25 @@
           console.log('Event:', eventName);
         }
       });
+    }
 
-      $('#link-button').on('click', function(e) { handler.open(); });
+    window.addEventListener('load', function() {
+      // Check if this is a Chase OAuth redirect callback
+      var isOAuthRedirect = window.location.href.indexOf('oauth_state_id') !== -1;
+
+      if (isOAuthRedirect) {
+        // Chase OAuth redirect — auto-complete the flow
+        document.getElementById('link-button').style.display = 'none';
+        document.getElementById('status-msg').style.display = 'block';
+        createHandler(true);
+        handler.open();
+      } else {
+        // Normal flow — show the button
+        createHandler(false);
+        $('#link-button').on('click', function(e) {
+          handler.open();
+        });
+      }
     });
 
     function copyToken() {
